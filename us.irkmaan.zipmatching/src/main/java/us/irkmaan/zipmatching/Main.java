@@ -1,170 +1,137 @@
 package us.irkmaan.zipmatching;
 
 import java.io.File;
-import java.io.FileFilter;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.regex.Pattern;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
-
-import org.apache.commons.io.FileUtils;
-
-import us.irkmaan.zipmatching.filefilter.DirectoryFilter;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import us.irkmaan.zipmatching.filefilter.PatternFileFilter;
 
 public class Main 
-{
-	private static final DirectoryFilter DIR_FILTER = new DirectoryFilter();
+{	
+	public static final String OPT_COMP_LEVEL = "c";
+	public static final String OPT_MIN_IN_DIR = "m";
+	public static final String OPT_BASE_DIR = "b";
+	public static final String OPT_FILE_PATTERN = "f";
+	public static final String OPT_OUTPUT_FILE = "o";
+	public static final String OPT_DIR_PATTERN = "d";
 	
-	public static void main( String[] args ) throws NoSuchAlgorithmException
+	public static final String DEFAULT_COMP_LEVEL = "-1";
+	public static final String DEFAULT_MIN_IN_DIR = "2";
+	public static final String DEFAULT_BASE_DIR = ".";
+	public static final String DEFAULT_FILE_PATTERN = ".*";
+	public static final String DEFAULT_DIR_PATTERN = null;
+	
+	public static void main( String[] args ) 
 	{
-		if ( args.length < 5 )
-		{
-			System.err.println( "args: cLevel min2Zip baseDir patternToZip zipFileName [dirPattern]" );
-			System.exit(1);
-		}
+		Args theArgs = processArgs( args );
 		
-		int compLevel = Integer.parseInt( args[0] );
-		int minToZip = Integer.parseInt( args[1] );
-		String baseDirPath = args[2];
-		String patternToZip = args[3];
-		String zipFileName = args[4];
-		String dirPatternString = null;
-		
-		if ( args.length >= 6 )
-		{
-			dirPatternString = args[5];
-		}
-		
-		File currDir = new File( baseDirPath );
+		File currDir = new File( theArgs.baseDirPath );
 		
 		if ( !currDir.isDirectory() )
 		{
-			System.err.println( baseDirPath + " is not a directory." );
+			System.err.println( theArgs.baseDirPath + " is not a directory." );
 			System.exit( 2 );
 		}
 		
-		PatternFileFilter pff = new PatternFileFilter( patternToZip );
-				
-		if ( dirPatternString != null )
+		PatternFileFilter pff;
+		
+		if ( theArgs.filePattern == null )
 		{
-			zipMatches( currDir, pff, zipFileName, Pattern.compile( dirPatternString ), compLevel, minToZip );
+			pff = null;
 		}
 		else
 		{
-			zipMatches( currDir, pff, zipFileName, compLevel, minToZip );
+			pff = new PatternFileFilter( theArgs.filePattern );
 		}
-	}
-	
-	public static void zipMatches( File currDir, FileFilter fnf, String zipFileName, int compLevel, int minToZip )
-	{
-		zipMatches( currDir, fnf, zipFileName, null, compLevel, minToZip );
-	}
-	
-	public static void zipMatches( File currDir, FileFilter fnf, String zipFileName, Pattern dirPattern, int compLevel, int minToZip )
-	{
-		System.out.println( currDir.getAbsolutePath() );
-		
-		File[] directories = currDir.listFiles( DIR_FILTER );
-		
-		if ( directories == null )
-		{
-			System.err.println( "Null result for listing directory " + currDir.getAbsolutePath() );
-			return;
-		}
-		
-		for ( int d = 0; d < directories.length; d++ )
-		{
-			if ( dirPattern != null && !dirPattern.matcher( directories[d].getName() ).matches() )
-			{
-				continue;
-			}
-						
-			zipMatches( directories[d], fnf, zipFileName, dirPattern, compLevel, minToZip );
-		}
-		
-		File[] zippables = currDir.listFiles( fnf );
 				
-		if ( zippables.length >= minToZip )
+		if ( theArgs.dirPattern != null )
 		{
-			doZip( zippables, currDir.getAbsolutePath() + File.separator + zipFileName, compLevel );
+			FileZipper.zipMatches( currDir, pff, theArgs.outputFile, Pattern.compile( theArgs.dirPattern ), theArgs.compLevel, 
+					theArgs.minInDir );
+		}
+		else
+		{
+			FileZipper.zipMatches( currDir, pff, theArgs.outputFile, theArgs.compLevel, theArgs.minInDir );
 		}
 	}
 	
-	private static void doZip( File[] zippables, String zipFilePath, int cLevel )
+	private static Args processArgs( String[] args )
 	{
-		File zipFile = new File( zipFilePath );
+		Options cliOptions = new Options();
 		
-		if ( zipFile.exists() )
+		cliOptions.addOption( Option.builder( OPT_COMP_LEVEL ).longOpt( "comp-level" ).hasArg().desc( "Zip compression level [0-9]" )
+				.build() );
+		cliOptions.addOption( Option.builder( OPT_MIN_IN_DIR ).longOpt( "min-in-dir" ).hasArg()
+				.desc( "Minimum number of matching files in directory for zipping to occur" ).build() );
+		cliOptions.addOption( Option.builder( OPT_BASE_DIR ).longOpt( "base-dir" ).hasArg().desc( "Base directory" ).build() );
+		cliOptions.addOption( Option.builder( OPT_FILE_PATTERN ).longOpt( "file-pattern" ).hasArg()
+				.desc( "Pattern of names of files to be zipped" ).build() );
+		cliOptions.addOption( Option.builder( OPT_OUTPUT_FILE ).longOpt( "output-file" ).hasArg().desc( "Output file name" ).required()
+				.build() );
+		cliOptions.addOption( Option.builder( OPT_DIR_PATTERN ).longOpt( "dir-pattern" ).hasArg()
+				.desc( "Pattern of names of directories to be processed" ).build() );
+		
+		CommandLineParser cliParser = new DefaultParser();
+		CommandLine cliArgs = null;
+		
+		try 
 		{
-			return;
+			cliArgs = cliParser.parse( cliOptions, args );
+		} 
+		catch (ParseException e) 
+		{
+			System.err.println( "Unable to parse command line arguments: " + e.getMessage() );
+			System.exit(1);
 		}
 		
-		ZipOutputStream zipStream = null;
-		
+		Args theArgs = new Args();
+				
 		try
 		{
-			zipStream = new ZipOutputStream( new FileOutputStream( zipFile ) );
+			theArgs.compLevel = Integer.parseInt( cliArgs.getOptionValue( OPT_COMP_LEVEL, DEFAULT_COMP_LEVEL ) );
 		}
-		catch (FileNotFoundException fnfe)
+		catch (NumberFormatException nfe)
 		{
-			System.err.println( "Unable to create " + zipFile.getAbsolutePath() + ": " + fnfe.getMessage() );
-			return;
-		}
-		
-		if ( cLevel >= 0 && cLevel <= 9 )
-		{
-			zipStream.setLevel( cLevel );
+			System.err.println( "Compression level must be an integer; instead was " + cliArgs.getOptionValue( OPT_COMP_LEVEL ) );
+			System.exit(2);
 		}
 		
-		List<File> successList = new ArrayList<File>();
-		
-		for ( int f = 0; f < zippables.length; f++ )
+		if ( theArgs.compLevel > 9 )
 		{
-			try
-			{
-				zipStream.putNextEntry( new ZipEntry( zippables[f].getName() ) );
-			}
-			catch (IOException ioe)
-			{
-				System.err.println( "Unable to create zip entry for " + zippables[f].getAbsolutePath() + ": " 
-			                        + ioe.getMessage() );
-				continue;
-			}
-			
-			try
-			{
-				zipStream.write( FileUtils.readFileToByteArray( zippables[f] ) );
-			}
-			catch (IOException ioe)
-			{
-				System.err.println( "Unable to write zip entry for " + zippables[f].getAbsolutePath() + ": " 
-			                        + ioe.getMessage() );
-				continue;
-			}
-			
-			successList.add( zippables[f] );
+			System.err.println( "Invalid compression level " + theArgs.compLevel + "; must be between 0 and 9" );
+			System.exit(4);
 		}
 		
 		try
 		{
-			zipStream.closeEntry();
-			zipStream.close();
+			theArgs.minInDir = Integer.parseInt( cliArgs.getOptionValue( OPT_MIN_IN_DIR, DEFAULT_MIN_IN_DIR ) );
 		}
-		catch (IOException ioe)
+		catch (NumberFormatException nfe)
 		{
-			System.err.println( "Unable to close zip file " + zipFile.getAbsolutePath() + ": " + ioe.getMessage() );
-			return;
+			System.err.println( "Minimum matching files in directory must be an integer; instead was " 
+						+ cliArgs.getOptionValue( OPT_MIN_IN_DIR ) );
+			System.exit(3);
 		}
 		
-		for ( File successFile : successList )
-		{
-			successFile.delete();
-		}
+		theArgs.baseDirPath = cliArgs.getOptionValue( OPT_BASE_DIR, DEFAULT_BASE_DIR );
+		theArgs.filePattern = cliArgs.getOptionValue( OPT_FILE_PATTERN, DEFAULT_FILE_PATTERN );
+		theArgs.dirPattern = cliArgs.getOptionValue( OPT_DIR_PATTERN, DEFAULT_DIR_PATTERN );
+		theArgs.outputFile = cliArgs.getOptionValue( OPT_OUTPUT_FILE );  // this is required from the command line
+	
+		return theArgs;
+	}
+	
+	public static class Args
+	{
+		public int compLevel;
+		public int minInDir;
+		public String baseDirPath;
+		public String dirPattern;
+		public String filePattern;
+		public String outputFile;
 	}
 }

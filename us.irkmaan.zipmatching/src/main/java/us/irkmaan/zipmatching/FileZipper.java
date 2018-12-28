@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,12 +20,12 @@ public class FileZipper
 {
 	private static final DirectoryFilter DIR_FILTER = new DirectoryFilter();
 
-	public static void zipMatches( File currDir, FileFilter fnf, String zipFileName, int compLevel, int minToZip )
+	public static void zipMatches( File currDir, FilenameFilter fnf, String zipFileName, int compLevel, int minToZip )
 	{
 		zipMatches( currDir, fnf, zipFileName, null, compLevel, minToZip );
 	}
 	
-	public static void zipMatches( File currDir, FileFilter fnf, String zipFileName, Pattern dirPattern, int compLevel, int minToZip )
+	public static void zipMatches( File currDir, FilenameFilter fnf, String zipFileName, Pattern dirPattern, int compLevel, int minToZip )
 	{
 		System.out.println( currDir.getAbsolutePath() );
 		

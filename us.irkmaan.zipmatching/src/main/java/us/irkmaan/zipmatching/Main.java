@@ -1,14 +1,18 @@
 package us.irkmaan.zipmatching;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.util.regex.Pattern;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import us.irkmaan.zipmatching.filefilter.PatternFileFilter;
+
+import us.irkmaan.zipmatching.filefilter.ExtensionFilenameFilter;
+import us.irkmaan.zipmatching.filefilter.PatternFilenameFilter;
 
 public class Main 
 {	
@@ -18,12 +22,16 @@ public class Main
 	public static final String OPT_FILE_PATTERN = "f";
 	public static final String OPT_OUTPUT_FILE = "o";
 	public static final String OPT_DIR_PATTERN = "d";
+	public static final String OPT_FILE_EXT = "e";
+	public static final String OPT_FILE_ALL = "a";
+
 	
 	public static final String DEFAULT_COMP_LEVEL = "-1";
 	public static final String DEFAULT_MIN_IN_DIR = "2";
 	public static final String DEFAULT_BASE_DIR = ".";
-	public static final String DEFAULT_FILE_PATTERN = ".*";
+	public static final String DEFAULT_FILE_PATTERN = null;
 	public static final String DEFAULT_DIR_PATTERN = null;
+	public static final String DEFAULT_FILE_EXT = null;
 	
 	public static void main( String[] args ) 
 	{
@@ -37,25 +45,32 @@ public class Main
 			System.exit( 2 );
 		}
 		
-		PatternFileFilter pff;
+		FilenameFilter fnf;
 		
 		if ( theArgs.filePattern == null )
 		{
-			pff = null;
+			if ( theArgs.fileExt == null )
+			{
+				fnf = null;
+			}
+			else
+			{
+				fnf = new ExtensionFilenameFilter( theArgs.fileExt );
+			}
 		}
 		else
 		{
-			pff = new PatternFileFilter( theArgs.filePattern );
+			fnf = new PatternFilenameFilter( theArgs.filePattern );
 		}
 				
 		if ( theArgs.dirPattern != null )
 		{
-			FileZipper.zipMatches( currDir, pff, theArgs.outputFile, Pattern.compile( theArgs.dirPattern ), theArgs.compLevel, 
+			FileZipper.zipMatches( currDir, fnf, theArgs.outputFile, Pattern.compile( theArgs.dirPattern ), theArgs.compLevel, 
 					theArgs.minInDir );
 		}
 		else
 		{
-			FileZipper.zipMatches( currDir, pff, theArgs.outputFile, theArgs.compLevel, theArgs.minInDir );
+			FileZipper.zipMatches( currDir, fnf, theArgs.outputFile, theArgs.compLevel, theArgs.minInDir );
 		}
 	}
 	
@@ -70,10 +85,14 @@ public class Main
 		cliOptions.addOption( Option.builder( OPT_BASE_DIR ).longOpt( "base-dir" ).hasArg().desc( "Base directory" ).build() );
 		cliOptions.addOption( Option.builder( OPT_FILE_PATTERN ).longOpt( "file-pattern" ).hasArg()
 				.desc( "Pattern of names of files to be zipped" ).build() );
+		cliOptions.addOption( Option.builder( OPT_FILE_EXT ).longOpt( "file-ext" ).hasArg()
+				.desc( "Extension of files to be zipped (including leading period if any)" ).build() );
 		cliOptions.addOption( Option.builder( OPT_OUTPUT_FILE ).longOpt( "output-file" ).hasArg().desc( "Output file name" ).required()
 				.build() );
 		cliOptions.addOption( Option.builder( OPT_DIR_PATTERN ).longOpt( "dir-pattern" ).hasArg()
 				.desc( "Pattern of names of directories to be processed" ).build() );
+		cliOptions.addOption( Option.builder( OPT_FILE_ALL ).longOpt( "all-files" )
+				.desc( "Indicates that all files are to be processed" ).build() );
 		
 		CommandLineParser cliParser = new DefaultParser();
 		CommandLine cliArgs = null;
@@ -117,8 +136,17 @@ public class Main
 			System.exit(3);
 		}
 		
-		theArgs.baseDirPath = cliArgs.getOptionValue( OPT_BASE_DIR, DEFAULT_BASE_DIR );
 		theArgs.filePattern = cliArgs.getOptionValue( OPT_FILE_PATTERN, DEFAULT_FILE_PATTERN );
+		theArgs.fileExt = cliArgs.getOptionValue( OPT_FILE_EXT, DEFAULT_FILE_EXT );
+		theArgs.allFiles = cliArgs.hasOption( OPT_FILE_ALL );
+		
+		if ( !theArgs.allFiles && theArgs.filePattern == null && theArgs.fileExt == null )
+		{
+			System.err.println( "Must specify that all files are to be processed, or either pattern or extension to filter file names by." );
+			System.exit(5);
+		}
+		
+		theArgs.baseDirPath = cliArgs.getOptionValue( OPT_BASE_DIR, DEFAULT_BASE_DIR );
 		theArgs.dirPattern = cliArgs.getOptionValue( OPT_DIR_PATTERN, DEFAULT_DIR_PATTERN );
 		theArgs.outputFile = cliArgs.getOptionValue( OPT_OUTPUT_FILE );  // this is required from the command line
 	
@@ -133,5 +161,7 @@ public class Main
 		public String dirPattern;
 		public String filePattern;
 		public String outputFile;
+		public String fileExt;
+		public boolean allFiles;
 	}
 }

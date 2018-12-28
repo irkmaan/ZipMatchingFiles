@@ -5,13 +5,9 @@ import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -98,11 +94,6 @@ public class Main
 		{
 			doZip( zippables, currDir.getAbsolutePath() + File.separator + zipFileName, compLevel );
 		}
-	}
-	
-	private static void doZip( File[] zippables, String zipFilePath )
-	{
-		doZip( zippables, zipFilePath, -1 );
 	}
 	
 	private static void doZip( File[] zippables, String zipFilePath, int cLevel )

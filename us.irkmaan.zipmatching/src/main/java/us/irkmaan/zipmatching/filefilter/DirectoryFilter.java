@@ -1,4 +1,4 @@
-package us.irkmaan.zipmatching;
+package us.irkmaan.zipmatching.filefilter;
 
 import java.io.File;
 import java.io.FileFilter;

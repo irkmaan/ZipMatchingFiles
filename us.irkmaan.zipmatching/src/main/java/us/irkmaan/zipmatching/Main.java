@@ -24,7 +24,6 @@ import us.irkmaan.zipmatching.filefilter.PatternFileFilter;
 public class Main 
 {
 	private static final DirectoryFilter DIR_FILTER = new DirectoryFilter();
-	private static MessageDigest md;
 	
 	public static void main( String[] args ) throws NoSuchAlgorithmException
 	{

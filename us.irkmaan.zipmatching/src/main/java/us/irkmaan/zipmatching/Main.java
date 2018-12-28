@@ -18,6 +18,9 @@ import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.io.FileUtils;
 
+import us.irkmaan.zipmatching.filefilter.DirectoryFilter;
+import us.irkmaan.zipmatching.filefilter.PatternFileFilter;
+
 public class Main 
 {
 	private static final DirectoryFilter DIR_FILTER = new DirectoryFilter();

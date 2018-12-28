@@ -23,7 +23,7 @@ public class Main
 	
 	public static void main( String[] args ) throws NoSuchAlgorithmException
 	{
-		if ( args.length < 6 )
+		if ( args.length < 5 )
 		{
 			System.err.println( "args: cLevel min2Zip baseDir patternToZip zipFileName [dirPattern]" );
 			System.exit(1);

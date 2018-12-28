@@ -57,22 +57,20 @@ public class Main
 				
 		if ( dirPatternString != null )
 		{
-			zipMatches( currDir, pff, zipFileName, Pattern.compile( dirPatternString ), command, compLevel, minToZip );
+			zipMatches( currDir, pff, zipFileName, Pattern.compile( dirPatternString ), compLevel, minToZip );
 		}
 		else
 		{
-			zipMatches( currDir, pff, zipFileName, command, compLevel, minToZip );
+			zipMatches( currDir, pff, zipFileName, compLevel, minToZip );
 		}
 	}
 	
-	public static void zipMatches( File currDir, FileFilter fnf, String zipFileName, String command, 
-			int compLevel, int minToZip )
+	public static void zipMatches( File currDir, FileFilter fnf, String zipFileName, int compLevel, int minToZip )
 	{
-		zipMatches( currDir, fnf, zipFileName, null, command, compLevel, minToZip );
+		zipMatches( currDir, fnf, zipFileName, null, compLevel, minToZip );
 	}
 	
-	public static void zipMatches( File currDir, FileFilter fnf, String zipFileName, Pattern dirPattern, String command, 
-			int compLevel, int minToZip )
+	public static void zipMatches( File currDir, FileFilter fnf, String zipFileName, Pattern dirPattern, int compLevel, int minToZip )
 	{
 		System.out.println( currDir.getAbsolutePath() );
 		
@@ -91,7 +89,7 @@ public class Main
 				continue;
 			}
 						
-			zipMatches( directories[d], fnf, zipFileName, dirPattern, command, compLevel, minToZip );
+			zipMatches( directories[d], fnf, zipFileName, dirPattern, compLevel, minToZip );
 		}
 		
 		File[] zippables = currDir.listFiles( fnf );
